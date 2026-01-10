@@ -1,0 +1,30 @@
+# Traefik .gitignore
+
+# ACME/Let's Encrypt certificate storage
+# Contains private keys for SSL certificates - NEVER commit this!
+acme.json
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Log files
+*.log
+logs/
+
+# Environment files (if you add any in the future)
+.env
+.env.*
+!.env.example
+
+# Editor/IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+SECURITY.md

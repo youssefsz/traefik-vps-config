@@ -1,0 +1,81 @@
+# Traefik Dynamic Configuration - Middlewares
+# This file contains reusable middlewares for all services
+# Reference: https://doc.traefik.io/traefik/reference/routing-configuration/http/middlewares/
+
+http:
+  middlewares:
+    # ============================================
+    # RATE LIMITING MIDDLEWARE
+    # ============================================
+    # Protects against request flooding and abuse
+    # Uses token bucket algorithm
+    rate-limit:
+      rateLimit:
+        average: 100      # 100 requests per second average
+        period: 1s        # Rate calculation period
+        burst: 200        # Allow burst of up to 200 requests
+        sourceCriterion:
+          ipStrategy:
+            depth: 0      # Use direct client IP (0 = rightmost IP in X-Forwarded-For)
+
+    # Stricter rate limit for sensitive endpoints (login, API, etc.)
+    rate-limit-strict:
+      rateLimit:
+        average: 20       # 20 requests per second
+        period: 1s
+        burst: 50
+        sourceCriterion:
+          ipStrategy:
+            depth: 0
+
+    # ============================================
+    # SECURITY HEADERS MIDDLEWARE
+    # ============================================
+    # Adds security headers to all responses
+    secure-headers:
+      headers:
+        # Prevent clickjacking
+        frameDeny: true
+        # Prevent MIME type sniffing
+        contentTypeNosniff: true
+        # Enable XSS filter in browsers
+        browserXssFilter: true
+        # Referrer policy
+        referrerPolicy: "strict-origin-when-cross-origin"
+        # HSTS - Force HTTPS (1 year)
+        stsSeconds: 31536000
+        stsIncludeSubdomains: true
+        stsPreload: true
+        # Prevent loading in frames from other origins
+        customFrameOptionsValue: "SAMEORIGIN"
+        # Content Security Policy (adjust as needed)
+        contentSecurityPolicy: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:;"
+
+    # ============================================
+    # COMPRESSION MIDDLEWARE
+    # ============================================
+    # Compresses responses to reduce bandwidth
+    compress:
+      compress: {}
+
+    # ============================================
+    # COMBINED MIDDLEWARE CHAINS
+    # ============================================
+    # Use these in your services for convenience
+
+    # Standard chain: rate limit + security headers + compression
+    default-chain:
+      chain:
+        middlewares:
+          - rate-limit
+          - secure-headers
+          - compress
+
+    # Strict chain: stricter rate limit + security headers + compression
+    # Use for login pages, APIs with sensitive data
+    strict-chain:
+      chain:
+        middlewares:
+          - rate-limit-strict
+          - secure-headers
+          - compress
