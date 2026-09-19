@@ -18,6 +18,9 @@ logs/
 .env.*
 !.env.example
 
+# Docker secrets
+secrets/
+
 # Editor/IDE files
 .idea/
 .vscode/

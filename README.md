@@ -8,7 +8,7 @@ This repository contains the configuration files for a Traefik reverse proxy dep
 
 ## Features
 
-- Automatic HTTPS certificates via Let's Encrypt (ACME TLS challenge)
+- Automatic HTTPS certificates via Let's Encrypt (Cloudflare DNS-01 challenge)
 - HTTP to HTTPS redirection
 - Docker provider integration with automatic service discovery
 - Reusable middleware configurations (rate limiting, security headers, compression)
@@ -30,6 +30,7 @@ traefik/
 - Docker and Docker Compose
 - A domain name pointing to your server
 - Port 80 and 443 available on the host
+- A Cloudflare API token scoped to `Zone:Read` and `DNS:Edit` for the zones Traefik manages
 
 ## Setup
 
@@ -50,7 +51,25 @@ touch acme.json
 chmod 600 acme.json
 ```
 
-### 3. Start Traefik
+### 3. Add the Cloudflare DNS API token
+
+Create a scoped Cloudflare API token with these permissions:
+
+- `Zone / Zone / Read`
+- `Zone / DNS / Edit`
+
+Restrict the token to the zones served by this Traefik instance. Store it as a Docker secret:
+
+```bash
+mkdir -p secrets
+chmod 700 secrets
+printf '%s' 'YOUR_TOKEN' > secrets/cloudflare_dns_api_token
+chmod 600 secrets/cloudflare_dns_api_token
+```
+
+The `secrets/` directory is ignored by Git. Never commit this token.
+
+### 4. Start Traefik
 
 ```bash
 docker compose up -d
@@ -139,7 +158,7 @@ Check that `acme.json` is being populated with certificates after Traefik proces
 
 ### Common issues
 
-1. **Certificate not issued**: Ensure port 443 is accessible from the internet and DNS is properly configured
+1. **Certificate not issued**: Verify the Cloudflare token has `Zone:Read` and `DNS:Edit` access to the requested domain
 2. **Service not discovered**: Verify the service is on the `traefik` network and has `traefik.enable=true`
 3. **Permission denied on acme.json**: The file must have 600 permissions
 

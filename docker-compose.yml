@@ -1,8 +1,6 @@
-version: '3'
-
 services:
   traefik:
-    image: traefik:latest
+    image: traefik:v3.6.6
     container_name: traefik
     restart: always
     security_opt:
@@ -16,6 +14,10 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./acme.json:/acme.json
       - ./dynamic:/dynamic:ro # Dynamic config directory
+    environment:
+      - "CF_DNS_API_TOKEN_FILE=/run/secrets/cloudflare_dns_api_token"
+    secrets:
+      - cloudflare_dns_api_token
     networks:
       - traefik
     deploy:
@@ -46,10 +48,15 @@ services:
       - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
       - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
 
-      # Let's Encrypt Certificate Resolver
-      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
-      - "--certificatesresolvers.myresolver.acme.email=dhibi.ywsf@gmail.com" # <--- UPDATE THIS EMAIL
+      # Let's Encrypt Certificate Resolver (Cloudflare DNS-01)
+      - "--certificatesresolvers.myresolver.acme.dnschallenge=true"
+      - "--certificatesresolvers.myresolver.acme.dnschallenge.provider=cloudflare"
+      - "--certificatesresolvers.myresolver.acme.email=dhibi.ywsf@gmail.com"
       - "--certificatesresolvers.myresolver.acme.storage=/acme.json"
+
+secrets:
+  cloudflare_dns_api_token:
+    file: ./secrets/cloudflare_dns_api_token
 
 networks:
   traefik:
