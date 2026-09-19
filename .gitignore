@@ -3,6 +3,7 @@
 # ACME/Let's Encrypt certificate storage
 # Contains private keys for SSL certificates - NEVER commit this!
 acme.json
+acme-*.json
 
 # Backup files
 *.bak

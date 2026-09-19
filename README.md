@@ -21,7 +21,8 @@ traefik/
 ├── docker-compose.yml      # Main Traefik service definition
 ├── dynamic/
 │   └── middlewares.yml     # Reusable middleware configurations
-├── acme.json               # Let's Encrypt certificates (auto-generated, not tracked)
+├── acme.json               # Existing TLS-challenge certificates (not tracked)
+├── acme-cloudflare.json    # Cloudflare DNS-challenge certificates (not tracked)
 └── .gitignore
 ```
 
@@ -44,11 +45,13 @@ docker network create traefik
 
 ### 2. Create the ACME storage file
 
-Traefik requires a file to store SSL certificates. This file must have restricted permissions:
+Traefik uses separate storage files for the existing TLS-challenge resolver and the Cloudflare DNS-challenge resolver. Both files must have restricted permissions:
 
 ```bash
 touch acme.json
+touch acme-cloudflare.json
 chmod 600 acme.json
+chmod 600 acme-cloudflare.json
 ```
 
 ### 3. Add the Cloudflare DNS API token
@@ -128,7 +131,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.your-service.rule=Host(`your-domain.com`)"
       - "traefik.http.routers.your-service.entrypoints=websecure"
-      - "traefik.http.routers.your-service.tls.certresolver=myresolver"
+      - "traefik.http.routers.your-service.tls.certresolver=cloudflare"
       - "traefik.http.routers.your-service.middlewares=default-chain@file"
     networks:
       - traefik
@@ -140,7 +143,7 @@ networks:
 
 ## Security Notes
 
-- The `acme.json` file contains SSL private keys and should never be committed to version control
+- The ACME JSON files contain SSL private keys and should never be committed to version control
 - The Docker socket is mounted read-only to limit potential security exposure
 - Services are not exposed by default; they must explicitly set `traefik.enable=true`
 
@@ -154,13 +157,13 @@ docker logs traefik
 
 ### Verify certificate status
 
-Check that `acme.json` is being populated with certificates after Traefik processes requests to your domains.
+Check that `acme-cloudflare.json` is populated after Traefik processes a router that uses the `cloudflare` resolver. Existing routers using `myresolver` continue to use `acme.json`.
 
 ### Common issues
 
 1. **Certificate not issued**: Verify the Cloudflare token has `Zone:Read` and `DNS:Edit` access to the requested domain
 2. **Service not discovered**: Verify the service is on the `traefik` network and has `traefik.enable=true`
-3. **Permission denied on acme.json**: The file must have 600 permissions
+3. **Permission denied on an ACME file**: Both ACME JSON files must have 600 permissions
 
 ## References
 
